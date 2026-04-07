@@ -1,0 +1,99 @@
+name: Build Cuttlefish Debian packages
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/build-cuttlefish-debs.yml'
+      - 'android-cuttlefish/**'
+
+permissions:
+  contents: read
+
+jobs:
+  build-debs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Show runner info
+        run: |
+          uname -a
+          df -h
+          free -h
+
+      - name: Install build prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git \
+            devscripts \
+            equivs \
+            config-package-dev \
+            debhelper-compat \
+            golang \
+            curl \
+            ca-certificates \
+            gnupg \
+            apt-transport-https \
+            openjdk-17-jdk
+
+      - name: Install bazel apt package
+        run: |
+          curl -fsSL https://bazel.build/bazel-release.pub.gpg | \
+            sudo gpg --dearmor -o /usr/share/keyrings/bazel-archive-keyring.gpg
+
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/bazel-archive-keyring.gpg] https://storage.googleapis.com/bazel-apt stable jdk1.8" | \
+            sudo tee /etc/apt/sources.list.d/bazel.list
+
+          sudo apt-get update
+          sudo apt-get install -y bazel
+          bazel --version
+          dpkg -l | grep '^ii' | grep bazel
+
+      - name: Bazel smoke test
+        working-directory: android-cuttlefish/base/cvd
+        run: |
+          set -euxo pipefail
+          which bazel
+          bazel --version
+          bazel clean --expunge || true
+          bazel build //:build_compilation_mode_txt --verbose_failures --sandbox_debug
+          ls -lah bazel-bin/build
+          cat bazel-bin/build/compilation_mode.txt
+
+      - name: Build cuttlefish packages
+        working-directory: android-cuttlefish
+        run: |
+          tools/buildutils/build_packages.sh
+          ls -lah ./*.deb
+
+      - name: Upload Debian packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: cuttlefish-debs
+          path: |
+            android-cuttlefish/*.deb
+            android-cuttlefish/*.buildinfo
+            android-cuttlefish/*.changes
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cuttlefish-build-logs
+          path: |
+            android-cuttlefish/**/bazel-*
+            android-cuttlefish/**/debian
+          if-no-files-found: warn
+          retention-days: 7
+          compression-level: 0

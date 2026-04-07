@@ -54,23 +54,30 @@ jobs:
 
           sudo apt-get update
           sudo apt-get install -y bazel
-          bazel --version
+
+          # Verify the Debian package is really installed
+          /usr/bin/bazel --version
           dpkg -l | grep '^ii' | grep bazel
 
       - name: Bazel smoke test
         working-directory: android-cuttlefish/base/cvd
         run: |
           set -euxo pipefail
+          export PATH=/usr/bin:/bin:/usr/sbin:/sbin:$PATH
           which bazel
-          bazel --version
-          bazel clean --expunge || true
-          bazel build //:build_compilation_mode_txt --verbose_failures --sandbox_debug
+          /usr/bin/bazel --version
+          /usr/bin/bazel clean --expunge || true
+          /usr/bin/bazel build //:build_compilation_mode_txt --verbose_failures --sandbox_debug
           ls -lah bazel-bin/build
           cat bazel-bin/build/compilation_mode.txt
 
       - name: Build cuttlefish packages
         working-directory: android-cuttlefish
         run: |
+          set -euxo pipefail
+          export PATH=/usr/bin:/bin:/usr/sbin:/sbin:$PATH
+          which bazel
+          /usr/bin/bazel --version
           tools/buildutils/build_packages.sh
           ls -lah ./*.deb
 

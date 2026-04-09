@@ -1,3 +1,0 @@
-# This is a "local package" for now
-cuttlefish-frontend source: no-nmu-in-changelog
-cuttlefish-frontend source: source-nmu-has-incorrect-version-number

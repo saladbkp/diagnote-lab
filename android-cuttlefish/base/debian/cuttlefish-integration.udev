@@ -1,2 +1,0 @@
-KERNEL=="tpm[0-9]*", MODE="0660", OWNER="tss", GROUP="cvdnetwork"
-KERNEL=="tpmrm[0-9]*", MODE="0660", OWNER="tss", GROUP="cvdnetwork"

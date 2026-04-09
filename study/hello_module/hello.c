@@ -6,11 +6,11 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("you");
 MODULE_DESCRIPTION("simple hello module");
 static int __init hello_init(void) {
-   printk(KERN_INFO "hello_module: hello world\n");
+   printk(KERN_INFO "hello_world: hello world\n");
    return 0;
 }
 static void __exit hello_exit(void) {
-   printk(KERN_INFO "hello_module: bye\n");
+   printk(KERN_INFO "hello_world: bye\n");
 }
 
 module_init(hello_init);
